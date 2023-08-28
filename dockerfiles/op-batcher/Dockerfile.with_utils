@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.19.0-alpine3.15 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.19.9-alpine3.16 AS builder
 
 ARG VERSION=v0.0.0
 
@@ -23,7 +23,7 @@ ARG TARGETOS TARGETARCH
 
 RUN make op-batcher VERSION="$VERSION" GOOS=$TARGETOS GOARCH=$TARGETARCH
 
-FROM alpine:3.15
+FROM alpine:3.16
 
 RUN apk add --no-cache iputils bash curl
 COPY --from=builder /app/op-batcher/bin/op-batcher /usr/local/bin

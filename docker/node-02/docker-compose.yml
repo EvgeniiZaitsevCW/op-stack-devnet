@@ -60,7 +60,7 @@ services:
       - --rollup.config=/credentials/rollup.json
       - --rpc.addr=0.0.0.0
       - --rpc.port=8547
-      - --p2p.static=/ip4/192.168.10.12/tcp/9003/p2p/$CW_OP_P2P_ID_NODE1
+      - --p2p.static=/ip4/192.168.10.12/tcp/9003/p2p/$CW_OP_P2P_ID_NODE1,/ip4/192.168.10.22/tcp/9003/p2p/$CW_OP_P2P_ID_NODE3
       - --p2p.listen.ip=0.0.0.0
       - --p2p.listen.tcp=9003
       - --p2p.listen.udp=9003

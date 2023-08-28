@@ -1,8 +1,8 @@
 # Running a single-node L2 network based on OP-Stack without Docker
 
 This instruction is actual for the following versions of OP-Stack repositories:
-* [optimism](https://github.com/ethereum-optimism/optimism), tag: `v1.0.4`;
-* [op-geth](https://github.com/ethereum-optimism/op-geth), tag: `v1.101105.1`.
+* [optimism](https://github.com/ethereum-optimism/optimism), tag: `op-node/v1.1.3`;
+* [op-geth](https://github.com/ethereum-optimism/op-geth), tag: `v1.101106.0`.
 
 *WARING:* The instruction below is for test purposes only and should not be used in production. At least you should protect private keys of accounts that are used to create and run the L2 network and appropriate contracts on the L1 network. It is strongly recommended to use hardware keys or special services to generate and use private keys like [OpenZeppelin Defender](https://docs.openzeppelin.com/defender/).
 
@@ -12,20 +12,24 @@ This instruction is actual for the following versions of OP-Stack repositories:
 
 1.  Ensure that the following software is installed on your local machine:
     * `curl`;
+    * `direnv`;
+    * `foundry`;
     * `git`;
     * `go`;
+    * `jq`;
     * `node`;
-    * `yarn`;
     * `make`;
-    * `jq`.
+    * `pnpm`.
 
+    *IMPORTANT:* `direnv` should be [hooked](https://direnv.net/docs/hook.html) into your shell. E.g. for `bash` add line `eval "$(direnv hook bash)"` in file `~/.bashrc`.
 
 2.  This instruction was checked on:
     * `Ubuntu  20.04 LTS`;
-    * `curl`, `git`, `jq`, `make` installed as `sudo apt install -y curl git make jq`;
-    * `go 1.20`;
+    * `curl`, `direnv`, `git`, `jq`, `make` installed as `sudo apt install -y curl direnv git jq make`;
+    * `foundry 0.2.0` installed as `curl -L https://foundry.paradigm.xyz | bash; foundryup -v 1.20`;
+    * `go 1.20` installed as `sudo apt update; wget https://go.dev/dl/go1.20.linux-amd64.tar.gz; tar xvzf go1.20.linux-amd64.tar.gz; sudo cp go/bin/go /usr/bin/go; sudo mv go /usr/lib; echo export GOROOT=/usr/lib/go >> ~/.bashrc`;
     * `node 16.19.1` installed via [nvm](https://github.com/nvm-sh/nvm);
-    * `yarn 1.22.19` installed as `sudo npm install -g yarn`.
+    * `pnpm 8.6.12` installed as `sudo npm install -g pnpm@8.6.12`;
 
 
 3.  Chose a name for your network configuration like:
@@ -65,12 +69,12 @@ This instruction is actual for the following versions of OP-Stack repositories:
 
 ### 2.1. Optimism Monorepo
 
-1.  Clone [Optimism Monorepo](https://github.com/ethereum-optimism/optimism.git) and check out tag `v1.0.4`:
+1.  Clone [Optimism Monorepo](https://github.com/ethereum-optimism/optimism.git) and check out tag `op-node/v1.1.3`:
     ```bash
     cd ~
     git clone https://github.com/ethereum-optimism/optimism.git
     cd optimism
-    git checkout v1.0.4
+    git checkout op-node/v1.1.3
     ```
 
 
@@ -85,20 +89,20 @@ This instruction is actual for the following versions of OP-Stack repositories:
 
 4.  Build Optimism Monorepo:
     ```bash
-    yarn install
+    pnpm install
     make op-node op-batcher op-proposer
-    yarn build
+    pnpm build
     ```
 
 
 ### 2.2. Op-geth
 
-1.  Clone another Optimism repository, `op-geth`: https://github.com/ethereum-optimism/op-geth.git, and check out tag `v1.101105.1`:
+1.  Clone another Optimism repository, `op-geth`: https://github.com/ethereum-optimism/op-geth.git, and check out tag `v1.101106.0`:
     ```bash
     cd ~
     git clone https://github.com/ethereum-optimism/op-geth.git
     cd op-geth
-    git checkout v1.101105.1
+    git checkout v1.101106.0
     ```
 
 
@@ -161,38 +165,47 @@ This instruction is actual for the following versions of OP-Stack repositories:
 
 2.  Inside the `contracts-bedrock` directory, copy the environment file
     ```bash
-    cp .env.example .env
+    cp .envrc.example .envrc
     ```
 
 
-3.  Fill out the environment variables in the `.env` file as follows:
+3.  Fill out the environment variables in the `.envrc` file as follows:
     ```bash
-    # RPC for the L1 network to deploy to
-    L1_RPC=http://localhost:8333
+    # RPC for the network to deploy to
+    export ETH_RPC_URL=http://localhost:8333
 
-    # Private key for the deployer (Admin) account
-    PRIVATE_KEY_DEPLOYER=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+    # Sets the deployer's key to match the first default hardhat account
+    export PRIVATE_KEY=ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
-    # Optional boolean to define if cast commands should be printed.
-    # Useful during migration testing
-    CAST_COMMANDS=1
+    # Name of the deployed network
+    export DEPLOYMENT_CONTEXT=local-op-devnet
+
+    # Optional Tenderly details for a simulation link during deployment
+    export TENDERLY_PROJECT=
+    export TENDERLY_USERNAME=
     ```
 
 
-4. Pick an L1 block to serve as the starting point for your L2 network. It's best to use a finalized L1 block as the starting block:
+4.  Pull the environment variables into context using `direnv`:
+    ``` bash
+    direnv allow .
+    ```
+
+
+5. Pick an L1 block to serve as the starting point for your L2 network. It's best to use a finalized L1 block as the starting block:
     ```bash
-    cast block finalized --rpc-url http://localhost:8333 | grep -E "(timestamp|hash|number)"
+    cast block finalized --rpc-url $ETH_RPC_URL | grep -E "(timestamp|hash|number)"
     ```
 
     The result will look like:
     ```
-    hash                 0x7835cb1551a77480a0997be13e7bcd719a1be3972f211be4e52cdb51541720f4
-    number               1060
-    timestamp            1693192227
+    hash                 0xd2d3243998eba9c136fb14a9ecc40805cec567d3a43bc1f396498a687c105a12
+    number               205
+    timestamp            1693216327
     ```
 
 
-5.  Create a configuration JSON file in the `deploy-config` subdirectory like:
+6.  Create a configuration JSON file in the `deploy-config` subdirectory like:
     ```bash
     touch deploy-config/local-op-devnet.json
     ```
@@ -204,9 +217,8 @@ This instruction is actual for the following versions of OP-Stack repositories:
 
       "finalSystemOwner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
       "portalGuardian": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-      "controller": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
 
-      "l1StartingBlockTag": "0x7835cb1551a77480a0997be13e7bcd719a1be3972f211be4e52cdb51541720f4",
+      "l1StartingBlockTag": "0xd2d3243998eba9c136fb14a9ecc40805cec567d3a43bc1f396498a687c105a12",
 
       "l1ChainID": 1337,
       "l2ChainID": 3007,
@@ -222,7 +234,7 @@ This instruction is actual for the following versions of OP-Stack repositories:
 
       "l2OutputOracleSubmissionInterval": 120,
       "l2OutputOracleStartingBlockNumber": 0,
-      "l2OutputOracleStartingTimestamp": 1693192227,
+      "l2OutputOracleStartingTimestamp": 1693216327,
 
       "l2OutputOracleProposer": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
       "l2OutputOracleChallenger": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
@@ -234,9 +246,17 @@ This instruction is actual for the following versions of OP-Stack repositories:
       "l1FeeVaultRecipient": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
       "sequencerFeeVaultRecipient": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
 
+      "baseFeeVaultMinimumWithdrawalAmount": "0x8ac7230489e80000",
+      "l1FeeVaultMinimumWithdrawalAmount": "0x8ac7230489e80000",
+      "sequencerFeeVaultMinimumWithdrawalAmount": "0x8ac7230489e80000",
+      "baseFeeVaultWithdrawalNetwork": 0,
+      "l1FeeVaultWithdrawalNetwork": 0,
+      "sequencerFeeVaultWithdrawalNetwork": 0,
+
       "gasPriceOracleOverhead": 1,
       "gasPriceOracleScalar": 1,
 
+      "enableGovernance": true,
       "governanceTokenSymbol": "OP",
       "governanceTokenName": "Optimism",
       "governanceTokenOwner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
@@ -280,69 +300,45 @@ This instruction is actual for the following versions of OP-Stack repositories:
     ```
 
 
-2.  Create a TypeScript configuration file in the `deploy-config` subdirectory:
+2.  Create a deployment directory like:
     ```bash
-    touch deploy-config/local-op-devnet.ts
-    ```
-    Fill the new file like:
-    ```typescript
-    import { DeployConfig } from '../src/deploy-config'
-    import config from './local-op-devnet.json'
-
-    export default config satisfies DeployConfig
-    
-    ```
-
-    *Note*: Here and throughout, `local-op-devnet` is the chosen name for the L2 network configuration, as specified in [section 1](#1-prerequisites-and-notes).
-
-
-3. Add a network configuration to the Hardhat config file `hardhat.config.ts` in the `contracts-bedrock` directory like:
-    ```typescript
-    networks: {
-        //....
-        'local-op-devnet': {
-          chainId: 1337,
-          url: process.env.L1_RPC || '',
-          accounts: [process.env.PRIVATE_KEY_DEPLOYER || ethers.constants.HashZero],
-          live: true,
-        },
-    }
+    mkdir deployments/$DEPLOYMENT_CONTEXT
     ```
 
 
-4.  If needed, remove the previously existing deployment:
+3.  Deploy the L1 smart contracts by calling
     ```bash
-    rm -rf deployments/local-op-devnet
+    forge script scripts/Deploy.s.sol:Deploy --private-key $PRIVATE_KEY --broadcast --rpc-url $ETH_RPC_URL --slow
     ```
-
-
-5.  Deploy the L1 smart contracts by running:
+    and then
     ```bash
-    npx hardhat deploy --network local-op-devnet --tags l1
+    forge script scripts/Deploy.s.sol:Deploy --sig 'sync()' --private-key $PRIVATE_KEY --broadcast --rpc-url $ETH_RPC_URL
     ```
 
     Contract deployment can take up to 15 minutes. Please wait for all smart contracts to be fully deployed before proceeding to the next step.
 
+    Flag `--slow` in the first command is needed to be sure that transactions are minted one by one, not in a single block.
 
-6.  Retrieve the address of the newly deployed `L2OutputOracleProxy` smart contract in the L1 network:
+
+4.  Retrieve the address of the newly deployed `L2OutputOracleProxy` smart contract in the L1 network:
     ```bash
     cat deployments/local-op-devnet/L2OutputOracleProxy.json | grep -m 1 \"address\":
     ```
 
     The result will look like:
     ```
-    "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
     ```
 
-7.  Retrieve the address of the newly deployed `OptimismPortalProxy` smart contract in the L1 network:
-    ```bash
-    cat deployments/local-op-devnet/OptimismPortalProxy.json | grep -m 1 \"address\":
-    ```
+   5.  Retrieve the address of the newly deployed `L1StandardBridgeProxy` smart contract in the L1 network:
+       ```bash
+       cat deployments/local-op-devnet/L1StandardBridgeProxy.json | grep -m 1 \"address\":
+       ```
 
-    The result will look like:
-    ```
-    "address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
-    ```
+       The result will look like:
+       ```
+       "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
+       ```
 
 
 
@@ -363,8 +359,8 @@ This instruction is actual for the following versions of OP-Stack repositories:
     export CW_OP_L1_RPC_KIND="basic" # Available options are: alchemy, quicknode, parity, nethermind, debug_geth, erigon, basic, and any
     export CW_OP_BATCHER_KEY="5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a"
     export CW_OP_PROPOSER_KEY="59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
-    export CW_OP_L2OOP_ADDRESS="0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9" # Address of the "L2OutputOracleProxy" contract on L1
-    export CW_OP_OPP_ADDRESS="0x5FC8d32690cc91D4c39d9d3abcBD16989F875707" # Address of the "OptimismPortalProxy" contract on L1
+    export CW_OP_L2OOP_ADDRESS="0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9" # Address of the "L2OutputOracleProxy" contract on L1
+    export CW_OP_L1SBP_ADDRESS="0x0165878A594ca255338adfa4d48449f69242Eb8F" # Address of the "L1StandardBridgeProxy" contract on L1
     export CW_OP_CONFIG_NAME="local-op-devnet"
     export CW_OP_L2_NETWORK_ID=3007
     ```
@@ -424,12 +420,9 @@ This instruction is actual for the following versions of OP-Stack repositories:
     ```bash
     cd ~/op-geth # Switch to the needed directory
     . ~/op_env.sh  # Load environment variables 
-    rm -rf datadir
+    rm -rf datadir # Remove the previous data
     mkdir datadir
-    echo "pwd" > datadir/password
-    echo $CW_OP_SEQUENCER_KEY > datadir/block-signer-key
-    ./build/bin/geth account import --datadir=datadir --password=datadir/password datadir/block-signer-key
-    ./build/bin/geth init --datadir=datadir genesis.json
+    build/bin/geth init --datadir=datadir genesis.json
     ```
 
 
@@ -462,12 +455,7 @@ This instruction is actual for the following versions of OP-Stack repositories:
       --authrpc.addr=0.0.0.0 \
       --authrpc.port=8551 \
       --authrpc.jwtsecret=./jwt.txt \
-      --rollup.disabletxpoolgossip=true \
-      --password=./datadir/password \
-      --allow-insecure-unlock \
-      --mine \
-      --miner.etherbase=$CW_OP_SEQUENCER_ADDRESS \
-      --unlock=$CW_OP_SEQUENCER_ADDRESS
+      --rollup.disabletxpoolgossip=true
     ```
 
     If you got an error stop the app and try to execute steps of section [7](#7-initialize-l2) again. Then run `op-geth` again.
@@ -487,8 +475,8 @@ This instruction is actual for the following versions of OP-Stack repositories:
       --rpc.addr=0.0.0.0 \
       --rpc.port=8547 \
       --rpc.enable-admin \
-      --p2p.sequencer.key=$CW_OP_SEQUENCER_KEY \
       --p2p.disable \
+      --p2p.sequencer.key=$CW_OP_SEQUENCER_KEY \
       --l1=$CW_OP_L1_RPC_URL \
       --l1.rpckind=$CW_OP_L1_RPC_KIND
     ```
@@ -551,4 +539,4 @@ This instruction is actual for the following versions of OP-Stack repositories:
 
 3.  If you previously set `"fundDevAccounts": true` in the section [4](#4-configure-the-network) you will have [Hardhat test accounts](https://hardhat.org/hardhat-network/docs/reference#initial-state) with a generous amount of native tokens (ETH) in the newly created L2 network to use.
 
-    Otherwise, to obtain some ETH in an L2 account, you will need to transfer the desired amount of ETH from that account to the `OptimismPortalProxy` contract within the L1 network and wait for the amount to appear in the L2 network. You can find the contract's address in the `op_env.sh` file.
+    Otherwise, to obtain some ETH in an L2 account, you will need to transfer the desired amount of ETH from that account to the `L1StandardBridgeProxy` contract within the L1 network and wait for the amount to appear in the L2 network. You can find the contract's address in the `op_env.sh` file.
