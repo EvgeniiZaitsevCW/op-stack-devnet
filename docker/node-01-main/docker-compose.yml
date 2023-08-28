@@ -1,0 +1,148 @@
+services:
+  node1-op-geth:
+    container_name: node1-op-geth
+    ports:
+      - "8551:8551" # Authenticated RPC, to communicate with the `op-node`
+      - "8545:8545" # RPC
+      - "8546:8546" # WebSocket
+    extra_hosts: # for  Linux hosts since version 20.10
+      - dockerhost:host-gateway
+    image: $CW_OP_IMAGE_OP_GETH
+    volumes:
+      - ./datadir:/datadir
+      - ./credentials:/credentials
+    command:
+      - geth
+      - --datadir=/datadir
+      - --http
+      - --http.corsdomain="*"
+      - --http.vhosts="*"
+      - --http.addr=0.0.0.0
+      - --http.port=8545
+      - --http.api=web3,debug,eth,txpool,net,engine
+      - --ws
+      - --ws.addr=0.0.0.0
+      - --ws.port=8546
+      - --ws.origins="*"
+      - --ws.api=debug,eth,txpool,net,engine
+      - --syncmode=full
+      - --gcmode=archive
+      - --nodiscover
+      - --maxpeers=0
+      - --networkid=$CW_OP_L2_NETWORK_ID
+      - --authrpc.vhosts="*"
+      - --authrpc.addr=0.0.0.0
+      - --authrpc.port=8551
+      - --authrpc.jwtsecret=/credentials/jwt.txt
+      - --rollup.disabletxpoolgossip=true
+      - --password=/credentials/password
+      - --allow-insecure-unlock
+      - --mine
+      - --miner.etherbase=$CW_OP_SEQUENCER_ADDRESS
+      - --unlock=$CW_OP_SEQUENCER_ADDRESS
+    networks:
+      op-local:
+        ipv4_address: 192.168.10.11
+
+  node1-op-node:
+    container_name: node1-op-node
+    ports:
+      - "8547:8547" # Rollup RPC, to execute special commands of the node
+    extra_hosts: # for  Linux hosts since version 20.10
+      - dockerhost:host-gateway
+    image: $CW_OP_IMAGE_OP_NODE
+    links:
+      - node1-op-geth
+    depends_on:
+      - node1-op-geth
+    volumes:
+      - ./credentials:/credentials
+      - ./p2p:/p2p
+    command:
+      - op-node
+      - --l2=http://192.168.10.11:8551
+      - --l2.jwt-secret=/credentials/jwt.txt
+      - --sequencer.enabled
+      - --sequencer.l1-confs=3
+      - --verifier.l1-confs=3
+      - --rollup.config=/credentials/rollup.json
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=8547
+      - --rpc.enable-admin
+      - --p2p.sequencer.key=$CW_OP_SEQUENCER_KEY
+      - --p2p.static=/ip4/192.168.10.22/tcp/9003/p2p/$CW_OP_P2P_ID_NODE2,/ip4/192.168.10.32/tcp/9003/p2p/$CW_OP_P2P_ID_NODE3
+      - --p2p.listen.ip=0.0.0.0
+      - --p2p.listen.tcp=9003
+      - --p2p.listen.udp=9003
+      - --p2p.priv.path=/credentials/opnode_p2p_priv.txt
+      - --p2p.peerstore.path=/p2p/opnode_peerstore_db
+      - --p2p.discovery.path=/p2p/opnode_discovery_db
+      - --l1=$CW_OP_L1_RPC_URL
+      - --l1.rpckind=$CW_OP_L1_RPC_KIND
+    networks:
+      op-local:
+        ipv4_address: 192.168.10.12
+
+  node1-op-batcher:
+    container_name: node1-op-batcher
+    ports:
+      - "8548:8548" # Batcher RPC, to safe stop and maybe some other commands
+    extra_hosts: # for  Linux hosts since version 20.10
+      - dockerhost:host-gateway
+    image: $CW_OP_IMAGE_OP_BATCHER
+    links:
+      - node1-op-geth
+      - node1-op-node
+    depends_on:
+      - node1-op-geth
+      - node1-op-node
+    command:
+      - op-batcher
+      - --l2-eth-rpc=http://192.168.10.11:8545
+      - --rollup-rpc=http://192.168.10.12:8547
+      - --poll-interval=1s
+      - --sub-safety-margin=6
+      - --num-confirmations=1
+      - --safe-abort-nonce-too-low-count=3
+      - --resubmission-timeout=30s
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=8548
+      - --rpc.enable-admin
+      - --l1-eth-rpc=$CW_OP_L1_RPC_URL
+      - --private-key=$CW_OP_BATCHER_KEY
+      - --max-channel-duration=15
+    networks:
+      op-local:
+        ipv4_address: 192.168.10.13
+
+  node1-op-proposer:
+    container_name: node1-op-proposer
+    ports:
+      - "8560:8560" # Proposer RPC, just for possible future usage
+    extra_hosts: # for  Linux hosts since version 20.10
+      - dockerhost:host-gateway
+    image: $CW_OP_IMAGE_OP_PROPOSER
+    links:
+      - node1-op-node
+    depends_on:
+      - node1-op-node
+    command:
+      - op-proposer
+      - --poll-interval=12s
+      - --rpc.port=8560
+      - --rollup-rpc=http://192.168.10.12:8547
+      - --l2oo-address=$CW_OP_L2OOP_ADDRESS
+      - --private-key=$CW_OP_PROPOSER_KEY
+      - --l1-eth-rpc=$CW_OP_L1_RPC_URL
+    networks:
+      op-local:
+        ipv4_address: 192.168.10.14
+
+networks:
+  op-local:
+    driver: bridge
+    name: op-local
+    ipam:
+      config:
+        - subnet: 192.168.10.0/24
+          gateway: 192.168.10.1
