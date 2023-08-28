@@ -1,0 +1,81 @@
+services:
+  node3-op-geth:
+    container_name: node3-op-geth
+    ports:
+      - "8581:8551" # Authenticated RPC, to communicate with the `op-node`
+      - "8575:8545" # RPC
+      - "8576:8546" # WebSocket
+    extra_hosts: # for  Linux hosts since version 20.10
+      - dockerhost:host-gateway
+    image: $CW_OP_IMAGE_OP_GETH
+    volumes:
+      - ./datadir:/datadir
+      - ./credentials:/credentials
+    command:
+      - geth
+      - --datadir=/datadir
+      - --http
+      - --http.corsdomain="*"
+      - --http.vhosts="*"
+      - --http.addr=0.0.0.0
+      - --http.port=8545
+      - --http.api=web3,debug,eth,txpool,net,engine
+      - --ws
+      - --ws.addr=0.0.0.0
+      - --ws.port=8546
+      - --ws.origins="*"
+      - --ws.api=debug,eth,txpool,net,engine
+      - --syncmode=full
+      - --gcmode=archive
+      - --nodiscover
+      - --maxpeers=0
+      - --networkid=$CW_OP_L2_NETWORK_ID
+      - --authrpc.vhosts="*"
+      - --authrpc.addr=0.0.0.0
+      - --authrpc.port=8551
+      - --authrpc.jwtsecret=/credentials/jwt.txt
+      - --rollup.disabletxpoolgossip=true
+      - --rollup.sequencerhttp=http://192.168.10.11:8545
+    networks:
+      op-local:
+        ipv4_address: 192.168.10.31
+
+  node3-op-node:
+    container_name: node3-op-node
+    ports:
+      - "8577:8547" # Rollup RPC, to execute special commands of the node
+    extra_hosts: # for  Linux hosts since version 20.10
+      - dockerhost:host-gateway
+    image: $CW_OP_IMAGE_OP_NODE
+    links:
+      - node3-op-geth
+    depends_on:
+      - node3-op-geth
+    volumes:
+      - ./credentials:/credentials
+      - ./p2p:/p2p
+    command:
+      - op-node
+      - --l2=http://192.168.10.31:8551
+      - --l2.jwt-secret=/credentials/jwt.txt
+      - --rollup.config=/credentials/rollup.json
+      - --rpc.addr=0.0.0.0
+      - --rpc.port=8547
+      - --p2p.static=/ip4/192.168.10.12/tcp/9003/p2p/$CW_OP_P2P_ID_NODE1,/ip4/192.168.10.22/tcp/9003/p2p/$CW_OP_P2P_ID_NODE2
+      - --p2p.listen.ip=0.0.0.0
+      - --p2p.listen.tcp=9003
+      - --p2p.listen.udp=9003
+      - --p2p.priv.path=/credentials/opnode_p2p_priv.txt
+      - --p2p.peerstore.path=/p2p/opnode_peerstore_db
+      - --p2p.discovery.path=/p2p/opnode_discovery_db
+      - --l1=$CW_OP_L1_RPC_URL
+      - --l1.rpckind=$CW_OP_L1_RPC_KIND
+    networks:
+      op-local:
+        ipv4_address: 192.168.10.32
+
+networks:
+  op-local:
+    name: op-local
+    external: true
+
