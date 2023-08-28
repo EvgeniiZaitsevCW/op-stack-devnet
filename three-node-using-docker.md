@@ -1,8 +1,8 @@
 # Running a three-node L2 network based on OP-Stack using Docker
 
 This instruction is actual for the following versions of OP-Stack repositories:
-* [optimism](https://github.com/ethereum-optimism/optimism), tag: `v1.0.4`;
-* [op-geth](https://github.com/ethereum-optimism/op-geth), tag: `v1.101105.1`.
+* [optimism](https://github.com/ethereum-optimism/optimism), tag: `op-node/v1.1.3`;
+* [op-geth](https://github.com/ethereum-optimism/op-geth), tag: `v1.101106.0`.
 
 *WARING:* The instruction below is for test purposes only and it should not be used in production. At least you should protect private keys of accounts that are used to create and run the L2 network and appropriate contracts on L1 network. It is strongly recommended to use hardware keys or special services to generate and use private keys (like OpenZeppelin Defender).
 
@@ -31,10 +31,10 @@ This instruction is actual for the following versions of OP-Stack repositories:
 
 
 4.  The following Docker images are used in this instruction:
-    * [zesgen/op-geth:v1.101105.1](https://hub.docker.com/layers/zesgen/op-geth/v1.101105.1/images/sha256-9a7918e30694e56fa6ece02adc088f640bea68d574874f6f782f9ca21c17172e?context=explore);
-    * [zesgen/op-node:v1.0.4](https://hub.docker.com/layers/zesgen/op-node/v1.0.4/images/sha256-93f0d25779de435e9c2418b24e46d114f4da3bdcd695d1395538b0ee72a5d891?context=explore);
-    * [zesgen/op-batcher:v1.0.4](https://hub.docker.com/layers/zesgen/op-batcher/v1.0.4/images/sha256-d84e42c280c9f2d4183d9d7fdfd83b42d0bec6d4350dfe2249553e4f58d79cb8?context=explore);
-    * [zesgen/op-proposer:v1.0.4](https://hub.docker.com/layers/zesgen/op-proposer/v1.0.4/images/sha256-4feb1368c5abc4707dbb3803eddec464ee42497a669e33c475a96a35c0d24fbe?context=explore).
+    * [zesgen/op-node:v1.1.3](https://hub.docker.com/layers/zesgen/op-node/v1.1.3/images/sha256-5974f4becb19ec290bd2474ad6abe12d32c80ab805ec351e5f3e34cff5c94659?context=explore);
+    * [zesgen/op-batcher:v1.1.3](https://hub.docker.com/layers/zesgen/op-batcher/v1.1.3/images/sha256-c7907e0e9d69b3ed81873bc714999109b93747caf4302710c62b4e53ed4625fc?context=explore);
+    * [zesgen/op-proposer:v1.1.3](https://hub.docker.com/layers/zesgen/op-proposer/v1.1.3/images/sha256-47fa1bc0d890a40fca60bd4bf82021a25eed284b98c558f34366e26b6114582d?context=explore).
+    * [zesgen/op-geth:v1.101106.0](https://hub.docker.com/layers/zesgen/op-geth/v1.101106.0/images/sha256-27cff53792ed8a084b2555e0465f605be62407737aaac0d36261c847d8fbbf9e?context=explore);
 
     If you want to use your own images created from scratch follow the instruction [here](./docker-images.md).
 
@@ -59,7 +59,7 @@ This instruction is actual for the following versions of OP-Stack repositories:
 
 2.  For each private key generate the appropriate P2P ID with the following commands:
     ```bash
-    sudo docker run -itd --name op_node_p2p_generation zesgen/op-node:v1.0.4
+    sudo docker run -itd --name op_node_p2p_generation zesgen/op-node:v1.1.3
     sudo docker exec op_node_p2p_generation sh -c 'echo "<put_first_private_key_here>" | op-node p2p priv2id'
     sudo docker exec op_node_p2p_generation sh -c 'echo "<put_second_private_key_here>" | op-node p2p priv2id'
     sudo docker exec op_node_p2p_generation sh -c 'echo "<put_third_private_key_here>" | op-node p2p priv2id'
@@ -98,16 +98,16 @@ This instruction is actual for the following versions of OP-Stack repositories:
     export CW_OP_L1_RPC_KIND="basic" # Available options are: alchemy, quicknode, parity, nethermind, debug_geth, erigon, basic, and any
     export CW_OP_BATCHER_KEY="5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a"
     export CW_OP_PROPOSER_KEY="59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
-    export CW_OP_L2OOP_ADDRESS="0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9" # The address of contract "L2OutputOracleProxy" on L1
-    export CW_OP_OPP_ADDRESS="0x5FC8d32690cc91D4c39d9d3abcBD16989F875707" # The address of contract "OptimismPortalProxy" on L1
+    export CW_OP_L2OOP_ADDRESS="0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9" # Address of the "L2OutputOracleProxy" contract on L1
+    export CW_OP_L1SBP_ADDRESS="0x0165878A594ca255338adfa4d48449f69242Eb8F" # Address of the "L1StandardBridgeProxy" contract on L1
     export CW_OP_CONFIG_NAME="local-op-devnet"
     export CW_OP_L2_NETWORK_ID=3007
     
     # Docker images for node apps
-    export CW_OP_IMAGE_OP_NODE="zesgen/op-node:v1.0.4"
-    export CW_OP_IMAGE_OP_BATCHER="zesgen/op-batcher:v1.0.4"
-    export CW_OP_IMAGE_OP_PROPOSER="zesgen/op-proposer:v1.0.4"
-    export CW_OP_IMAGE_OP_GETH="zesgen/op-geth:v1.101105.1"
+    export CW_OP_IMAGE_OP_NODE="zesgen/op-node:v1.1.3"
+    export CW_OP_IMAGE_OP_BATCHER="zesgen/op-batcher:v1.1.3"
+    export CW_OP_IMAGE_OP_PROPOSER="zesgen/op-proposer:v1.1.3"
+    export CW_OP_IMAGE_OP_GETH="zesgen/op-geth:v1.101106.0"
     
     # P2P parameters
     export CW_OP_P2P_PRIVATE_KEY_NODE1="d01aba27820aeeb60ead4aed481eb30107426c18fd2e3133f1abac8fcd570d01"
@@ -195,15 +195,15 @@ This instruction is actual for the following versions of OP-Stack repositories:
     ```
     You should see something like:
     ```
-    CONTAINER ID   IMAGE                        COMMAND                  CREATED          STATUS          NAMES
-    49118fe6634d   zesgen/op-node:v1.0.4        "op-node --l2=http:/…"   11 minutes ago   Up 11 minutes   node3-op-node
-    094ab95e57e6   zesgen/op-geth:v1.101105.1   "geth --datadir=/dat…"   11 minutes ago   Up 11 minutes   node3-op-geth
-    45f9fffc52d2   zesgen/op-node:v1.0.4        "op-node --l2=http:/…"   11 minutes ago   Up 11 minutes   node2-op-node
-    a7df2aefdcf8   zesgen/op-geth:v1.101105.1   "geth --datadir=/dat…"   11 minutes ago   Up 11 minutes   node2-op-geth
-    1de25ae3278a   zesgen/op-batcher:v1.0.4     "op-batcher --l2-eth…"   11 minutes ago   Up 11 minutes   node1-op-batcher
-    5af07f3e3c69   zesgen/op-proposer:v1.0.4    "op-proposer --poll-…"   11 minutes ago   Up 11 minutes   node1-op-proposer
-    73561425ab09   zesgen/op-node:v1.0.4        "op-node --l2=http:/…"   11 minutes ago   Up 11 minutes   node1-op-node
-    8336eba2eaef   zesgen/op-geth:v1.101105.1   "geth --datadir=/dat…"   11 minutes ago   Up 11 minutes   node1-op-geth
+    CONTAINER ID   IMAGE                        COMMAND                  CREATED         STATUS         NAMES
+    c9eb5a971c9f   zesgen/op-node:v1.1.3        "op-node --l2=http:/…"   4 seconds ago   Up 3 seconds   node3-op-node
+    76101d0f51c3   zesgen/op-geth:v1.101106.0   "geth --datadir=/dat…"   4 seconds ago   Up 3 seconds   node3-op-geth
+    dfbae494d754   zesgen/op-node:v1.1.3        "op-node --l2=http:/…"   5 seconds ago   Up 4 seconds   node2-op-node
+    7c665f62e6c4   zesgen/op-geth:v1.101106.0   "geth --datadir=/dat…"   5 seconds ago   Up 4 seconds   node2-op-geth
+    25bdf7981473   zesgen/op-batcher:v1.1.3     "op-batcher --l2-eth…"   6 seconds ago   Up 4 seconds   node1-op-batcher
+    1b26882da506   zesgen/op-proposer:v1.1.3    "op-proposer --poll-…"   6 seconds ago   Up 4 seconds   node1-op-proposer
+    9c9128d42515   zesgen/op-node:v1.1.3        "op-node --l2=http:/…"   6 seconds ago   Up 5 seconds   node1-op-node
+    4f3b983a53e0   zesgen/op-geth:v1.101106.0   "geth --datadir=/dat…"   6 seconds ago   Up 5 seconds   node1-op-geth
     ```
     If some containers are stopped, just repeat the previous step again. Usually `proposer` or `batcher` might not start the first time due to delays in other containers.
     
@@ -234,9 +234,9 @@ This instruction is actual for the following versions of OP-Stack repositories:
 
     | Node | Container | In-container RPC URL | Forwarded port RPC URL |
     |---|---|---|---|
-    | 1 | node1-op-node | http://192.168.10.11:8545 | http://localhost:8545|
-    | 2 | node2-op-node | http://192.168.10.21:8545 | http://localhost:8565|
-    | 3 | node3-op-node | http://192.168.10.31:8545 | http://localhost:8575|
+    | 1 | node1-op-node | http://192.168.10.11:8545 | http://127.0.0.1:8545|
+    | 2 | node2-op-node | http://192.168.10.21:8545 | http://127.0.0.1:8565|
+    | 3 | node3-op-node | http://192.168.10.31:8545 | http://127.0.0.1:8575|
 
 2.  You can check that blocks are being produced and can be accessed through each node with the following script:
     ```bash
@@ -253,5 +253,8 @@ This instruction is actual for the following versions of OP-Stack repositories:
     echo "RPC URL: $RPC_URL"
     curl -H "Content-Type: application/json" -d "$REQUEST_DATA" "$RPC_URL" | jq
     ```
+
+    The last block number of all three nodes should differ by no more than 1. 
+
 
 3.  Information about getting native tokens (ETH) inside the newly created L2 network see [here](single-node-no-docker.md#9-use-the-newly-created-l2-network).

@@ -6,16 +6,16 @@ export CW_OP_L1_RPC_URL="http://dockerhost:8333"
 export CW_OP_L1_RPC_KIND="basic" # Available options are: alchemy, quicknode, parity, nethermind, debug_geth, erigon, basic, and any
 export CW_OP_BATCHER_KEY="5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a"
 export CW_OP_PROPOSER_KEY="59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
-export CW_OP_L2OOP_ADDRESS="0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9" # The address of contract "L2OutputOracleProxy" on L1
-export CW_OP_OPP_ADDRESS="0x5FC8d32690cc91D4c39d9d3abcBD16989F875707" # The address of contract "OptimismPortalProxy" on L1
+export CW_OP_L2OOP_ADDRESS="0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9" # Address of the "L2OutputOracleProxy" contract on L1
+export CW_OP_L1SBP_ADDRESS="0x0165878A594ca255338adfa4d48449f69242Eb8F" # Address of the "L1StandardBridgeProxy" contract on L1
 export CW_OP_CONFIG_NAME="local-op-devnet"
 export CW_OP_L2_NETWORK_ID=3007
 
 # Docker images for node apps
-export CW_OP_IMAGE_OP_NODE="zesgen/op-node:v1.0.4"
-export CW_OP_IMAGE_OP_BATCHER="zesgen/op-batcher:v1.0.4"
-export CW_OP_IMAGE_OP_PROPOSER="zesgen/op-proposer:v1.0.4"
-export CW_OP_IMAGE_OP_GETH="zesgen/op-geth:v1.101105.1"
+export CW_OP_IMAGE_OP_NODE="zesgen/op-node:v1.1.3"
+export CW_OP_IMAGE_OP_BATCHER="zesgen/op-batcher:v1.1.3"
+export CW_OP_IMAGE_OP_PROPOSER="zesgen/op-proposer:v1.1.3"
+export CW_OP_IMAGE_OP_GETH="zesgen/op-geth:v1.101106.0"
 
 # P2P parameters
 export CW_OP_P2P_PRIVATE_KEY_NODE1="d01aba27820aeeb60ead4aed481eb30107426c18fd2e3133f1abac8fcd570d01"

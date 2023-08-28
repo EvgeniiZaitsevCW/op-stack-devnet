@@ -35,11 +35,6 @@ services:
       - --authrpc.port=8551
       - --authrpc.jwtsecret=/credentials/jwt.txt
       - --rollup.disabletxpoolgossip=true
-      - --password=/credentials/password
-      - --allow-insecure-unlock
-      - --mine
-      - --miner.etherbase=$CW_OP_SEQUENCER_ADDRESS
-      - --unlock=$CW_OP_SEQUENCER_ADDRESS
     networks:
       op-local:
         ipv4_address: 192.168.10.11
