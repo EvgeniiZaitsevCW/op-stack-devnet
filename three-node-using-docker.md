@@ -26,6 +26,7 @@ This instruction is actual for the following versions of OP-Stack repositories:
         * `op_env.sh` contains main settings of the network;
         * `genesis.json` contains the genesis information of the L2 network;
         * `rollup.json` contains the configuration of the L2 network.
+    * d. No other L2 nodes with the same set of `genesis.json` and `rollup.json` files are running. 
 
     If one of the conditions is not met follow the instruction [here](./single-node-no-docker.md). Execute all the steps in order until you meet all the mentioned conditions.
 
