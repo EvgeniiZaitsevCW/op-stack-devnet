@@ -192,7 +192,7 @@ This instruction is actual for the following versions of OP-Stack repositories:
 
 5.  Be sure that all containers are working using the command:
     ```bash
-    sudo docker ps --format 'table {{.ID}}\t{{.Image}}\t{{.Command}}\t{{.RunningFor}}\t{{.Status}}\t{{.Names}}'
+    sudo docker ps -a --format 'table {{.ID}}\t{{.Image}}\t{{.Command}}\t{{.RunningFor}}\t{{.Status}}\t{{.Names}}'
     ```
     You should see something like:
     ```
